@@ -1,68 +1,68 @@
 # BackMirror
 
-BackMirror is a local-first web app that turns a phone into a private camera and a computer into a large live preview screen. It is designed for solo use cases like checking hard-to-see skin areas, hair, or narrow spaces.
+BackMirror 是一个本地优先的 Web App，可以把手机变成私密摄像头，把电脑变成大屏实时预览器。它面向独自使用的场景，例如查看难以看见的皮肤区域、发型，或狭窄空间里的物体。
 
-BackMirror helps capture images locally. It does not diagnose, treat, or replace medical advice.
+BackMirror 只帮助你在本地拍摄图像。它不提供诊断、治疗，也不能替代专业医疗建议。
 
-## Features
+## 功能
 
-- Same-LAN pairing with a QR code.
-- Phone rear camera streams to the desktop via WebRTC.
-- Desktop live preview with mirror toggle.
-- One-click still image capture and local download.
-- No cloud upload and no server-side image storage.
-- HTTPS local server for mobile camera access.
+- 通过二维码在同一局域网内配对。
+- 手机后置摄像头通过 WebRTC 推流到电脑端。
+- 电脑端实时预览，并支持镜像切换。
+- 一键拍摄静态图片并下载到本地。
+- 不上传云端，不在服务端保存图片或视频。
+- 使用本地 HTTPS 服务，满足手机浏览器访问摄像头的要求。
 
-## Requirements
+## 环境要求
 
-- Node.js 20 or newer.
-- `openssl` available on PATH for generating a local HTTPS certificate.
-- Optional: `qrencode` available on PATH for QR code SVG generation. If it is missing, use the mobile URL shown on the desktop page.
+- Node.js 20 或更高版本。
+- `openssl` 需要在 PATH 中可用，用于生成本地 HTTPS 证书。
+- 可选：`qrencode` 需要在 PATH 中可用，用于生成二维码 SVG。如果缺少它，可以直接使用桌面端页面显示的手机访问链接。
 
-This MVP has no npm dependencies, so it can run even when `npm`, `pnpm`, or `yarn` are unavailable.
+这个 MVP 没有 npm 依赖，因此即使 `npm`、`pnpm` 或 `yarn` 不可用，也可以运行。
 
-## Run
+## 运行
 
 ```bash
 node server.js
 ```
 
-Then open:
+然后打开：
 
 ```text
 https://localhost:7443
 ```
 
-For local-only development on machines that block binding to all interfaces, run:
+如果你的机器阻止绑定到所有网络接口，只想做本机开发测试，可以运行：
 
 ```bash
 HOST=127.0.0.1 node server.js
 ```
 
-The server also prints a LAN URL such as:
+服务启动后也会打印一个局域网 URL，例如：
 
 ```text
 https://192.168.1.23:7443
 ```
 
-Use that LAN URL from the phone, or scan the QR code shown on the desktop page.
+在手机上打开这个局域网 URL，或扫描桌面端页面显示的二维码。
 
-## HTTPS Certificate
+## HTTPS 证书
 
-On first run, BackMirror creates a self-signed certificate in `.cert/`. Desktop and mobile browsers will show a certificate warning. Accept the warning on both devices so the browser allows camera access.
+第一次运行时，BackMirror 会在 `.cert/` 目录中创建一个自签名证书。桌面端和手机端浏览器都会显示证书警告。你需要在两个设备上接受该警告，浏览器才会允许访问摄像头。
 
-For smoother repeated use, trust the generated certificate on your development machine or replace `.cert/cert.pem` and `.cert/key.pem` with your own local certificate.
+为了让后续使用更顺畅，你可以在开发机器上信任生成的证书，或用自己的本地证书替换 `.cert/cert.pem` 和 `.cert/key.pem`。
 
-## Privacy Notes
+## 隐私说明
 
-- The media stream is sent through WebRTC between the phone and desktop.
-- The Node server only handles static files and signaling messages.
-- Captured images are generated in the desktop browser and downloaded locally.
-- The server does not write photos or video frames to disk.
+- 媒体流通过 WebRTC 在手机和电脑之间传输。
+- Node 服务只处理静态文件和信令消息。
+- 拍摄的图片在电脑浏览器中生成，并下载到本地。
+- 服务端不会把照片或视频帧写入磁盘。
 
-## Current Limitations
+## 当前限制
 
-- Both devices should be on the same local network.
-- WebRTC is configured without STUN/TURN servers for local-first behavior; unusual network setups may block the peer connection.
-- Torch and focus controls depend on mobile browser support.
-- iOS and Android camera behavior should be verified on real devices before calling this production-ready.
+- 两台设备应处于同一局域网内。
+- WebRTC 当前没有配置 STUN/TURN 服务，以保持本地优先；某些特殊网络环境可能会阻止点对点连接。
+- 手电筒和对焦控制取决于手机浏览器支持情况。
+- 在称为生产可用之前，应在真实 iOS 和 Android 设备上验证摄像头行为。
