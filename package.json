@@ -1,0 +1,19 @@
+{
+  "name": "backmirror",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first phone camera mirror for private solo photo capture.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node --check server.js"
+  },
+  "keywords": [
+    "webrtc",
+    "camera",
+    "privacy",
+    "local-first"
+  ],
+  "license": "MIT"
+}

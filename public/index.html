@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BackMirror</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="desktop-shell">
+    <main class="desktop-layout">
+      <section class="viewer-panel" aria-label="Live camera preview">
+        <video id="remoteVideo" class="preview-video mirrored" autoplay playsinline muted></video>
+        <div id="emptyState" class="empty-state">
+          <strong>Waiting for phone camera</strong>
+          <span>Scan the QR code with your phone on the same Wi-Fi network.</span>
+        </div>
+      </section>
+
+      <aside class="control-panel">
+        <div class="brand-row">
+          <div>
+            <h1>BackMirror</h1>
+            <p>Private local camera mirror</p>
+          </div>
+          <span id="statusBadge" class="status-badge waiting">Waiting</span>
+        </div>
+
+        <div class="qr-card">
+          <img id="qrImage" alt="Phone connection QR code" />
+          <div class="mobile-link-row">
+            <input id="mobileUrl" readonly aria-label="Mobile camera URL" />
+            <button id="copyLink" type="button">Copy</button>
+          </div>
+        </div>
+
+        <div class="toolbar" aria-label="Desktop controls">
+          <button id="captureBtn" class="primary" type="button" disabled>Capture</button>
+          <button id="mirrorBtn" type="button">Mirror On</button>
+          <button id="newRoomBtn" type="button">New Room</button>
+        </div>
+
+        <div id="photoPanel" class="photo-panel" hidden>
+          <img id="photoPreview" alt="Captured frame preview" />
+          <a id="downloadLink" class="download-link" download="backmirror-capture.png">Download Photo</a>
+        </div>
+
+        <p class="disclaimer">
+          BackMirror helps you capture images locally. It does not diagnose, treat, or replace medical advice.
+        </p>
+      </aside>
+    </main>
+
+    <canvas id="captureCanvas" hidden></canvas>
+    <script type="module" src="/desktop.js"></script>
+  </body>
+</html>

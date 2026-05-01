@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>BackMirror Camera</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="mobile-shell">
+    <main class="mobile-camera">
+      <video id="localVideo" class="phone-video" autoplay playsinline muted></video>
+      <div class="mobile-topbar">
+        <div>
+          <h1>BackMirror</h1>
+          <p id="mobileStatus">Starting camera...</p>
+        </div>
+        <span id="mobileBadge" class="status-badge waiting">Starting</span>
+      </div>
+      <div class="mobile-actions">
+        <button id="torchBtn" type="button" disabled>Torch Off</button>
+        <button id="flipBtn" type="button">Use Front</button>
+      </div>
+      <div id="mobileError" class="mobile-error" hidden></div>
+    </main>
+    <script type="module" src="/mobile.js"></script>
+  </body>
+</html>
