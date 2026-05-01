@@ -3,7 +3,12 @@ const state = {
   roomId: null,
   peer: null,
   remoteStream: null,
-  mirrored: true
+  mirrored: true,
+  captureChannel: null,
+  incomingCapture: null,
+  lastCaptureName: "",
+  lastCaptureUrl: "",
+  phoneSaveTimer: null
 };
 
 const els = {
@@ -16,16 +21,20 @@ const els = {
   capture: document.querySelector("#captureBtn"),
   mirror: document.querySelector("#mirrorBtn"),
   newRoom: document.querySelector("#newRoomBtn"),
-  canvas: document.querySelector("#captureCanvas"),
   photoPanel: document.querySelector("#photoPanel"),
   photoPreview: document.querySelector("#photoPreview"),
-  download: document.querySelector("#downloadLink")
+  phoneSaveHint: document.querySelector("#phoneSaveHint"),
+  download: document.querySelector("#downloadLink"),
+  savePhone: document.querySelector("#savePhoneBtn"),
+  cameraResolution: document.querySelector("#cameraResolution"),
+  previewResolution: document.querySelector("#previewResolution")
 };
 
 els.copy.addEventListener("click", copyMobileUrl);
-els.capture.addEventListener("click", captureFrame);
+els.capture.addEventListener("click", requestPhoneCapture);
 els.mirror.addEventListener("click", toggleMirror);
 els.newRoom.addEventListener("click", startRoom);
+els.savePhone.addEventListener("click", requestPhoneSave);
 
 startRoom();
 
@@ -34,6 +43,10 @@ async function startRoom() {
   setStatus("Waiting", "waiting");
   els.capture.disabled = true;
   els.empty.hidden = false;
+  els.cameraResolution.textContent = "Waiting";
+  els.previewResolution.textContent = "Waiting";
+  els.photoPanel.hidden = true;
+  els.phoneSaveHint.hidden = true;
 
   const res = await fetch("/api/room", { cache: "no-store" });
   const room = await res.json();
@@ -72,6 +85,30 @@ function openSocket(roomId) {
       await state.peer.addIceCandidate(message.candidate).catch(() => {});
     }
 
+    if (message.type === "camera-settings") {
+      els.cameraResolution.textContent = formatResolution(message.settings);
+    }
+
+    if (message.type === "capture-ready") {
+      setStatus("Receiving Photo", "waiting");
+      if (!state.incomingCapture || state.incomingCapture.id !== message.id) {
+        state.incomingCapture = {
+          id: message.id,
+          chunks: [],
+          fileName: message.fileName || makeCaptureName("jpg")
+        };
+      }
+    }
+
+    if (message.type === "capture-error") {
+      setStatus("Capture Failed", "error");
+      els.capture.disabled = false;
+    }
+
+    if (message.type === "phone-save-ready") {
+      confirmPhoneSaveReady();
+    }
+
     if (message.type === "peer-left") {
       setStatus("Disconnected", "error");
       els.capture.disabled = true;
@@ -82,6 +119,10 @@ function openSocket(roomId) {
 function createPeer() {
   state.peer = new RTCPeerConnection({ iceServers: [] });
 
+  state.peer.addEventListener("datachannel", (event) => {
+    if (event.channel.label === "captures") setupCaptureChannel(event.channel);
+  });
+
   state.peer.addEventListener("icecandidate", (event) => {
     if (event.candidate) send({ type: "ice-candidate", candidate: event.candidate });
   });
@@ -91,8 +132,9 @@ function createPeer() {
     state.remoteStream = stream;
     els.video.srcObject = stream;
     els.empty.hidden = true;
-    els.capture.disabled = false;
+    els.capture.disabled = state.captureChannel?.readyState !== "open";
     setStatus("Connected", "connected");
+    updatePreviewResolution();
   });
 
   state.peer.addEventListener("connectionstatechange", () => {
@@ -106,25 +148,114 @@ function createPeer() {
   });
 }
 
-function captureFrame() {
-  if (!els.video.videoWidth || !els.video.videoHeight) return;
+function setupCaptureChannel(channel) {
+  state.captureChannel = channel;
+  channel.addEventListener("open", () => {
+    if (state.remoteStream) els.capture.disabled = false;
+  });
+  channel.addEventListener("message", (event) => handleCaptureData(event.data));
+  channel.addEventListener("close", () => {
+    if (state.captureChannel === channel) state.captureChannel = null;
+    els.capture.disabled = true;
+  });
+}
 
-  els.canvas.width = els.video.videoWidth;
-  els.canvas.height = els.video.videoHeight;
-  const context = els.canvas.getContext("2d");
-
-  if (state.mirrored) {
-    context.translate(els.canvas.width, 0);
-    context.scale(-1, 1);
+function handleCaptureData(data) {
+  let message;
+  try {
+    message = JSON.parse(data);
+  } catch {
+    return;
   }
 
-  context.drawImage(els.video, 0, 0, els.canvas.width, els.canvas.height);
-  const url = els.canvas.toDataURL("image/png");
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  els.photoPreview.src = url;
-  els.download.href = url;
-  els.download.download = `backmirror-${timestamp}.png`;
+  if (message.type === "capture-meta") {
+    state.incomingCapture = {
+      id: message.id,
+      chunks: [],
+      fileName: message.fileName || makeCaptureName("jpg")
+    };
+    return;
+  }
+
+  if (message.type === "capture-chunk" && state.incomingCapture?.id === message.id) {
+    state.incomingCapture.chunks[message.index] = message.chunk;
+    return;
+  }
+
+  if (message.type === "capture-complete" && state.incomingCapture?.id === message.id) {
+    const dataUrl = state.incomingCapture.chunks.join("");
+    showCapturedPhoto(dataUrl, state.incomingCapture.fileName);
+    state.incomingCapture = null;
+    return;
+  }
+
+  if (message.type === "phone-save-ready") {
+    confirmPhoneSaveReady();
+  }
+}
+
+function requestPhoneCapture() {
+  if (!state.captureChannel || state.captureChannel.readyState !== "open") {
+    setStatus("Camera Not Ready", "error");
+    return;
+  }
+
+  els.capture.disabled = true;
+  els.photoPanel.hidden = true;
+  els.phoneSaveHint.hidden = true;
+  setStatus("Capturing", "waiting");
+  send({ type: "capture-request", id: crypto.randomUUID?.() || String(Date.now()) });
+}
+
+function requestPhoneSave() {
+  if (!state.lastCaptureUrl) return;
+  const requestId = crypto.randomUUID?.() || String(Date.now());
+  const payload = {
+    type: "save-to-phone",
+    id: requestId,
+    fileName: state.lastCaptureName
+  };
+
+  send(payload);
+  if (state.captureChannel?.readyState === "open") {
+    state.captureChannel.send(JSON.stringify(payload));
+  }
+
+  clearTimeout(state.phoneSaveTimer);
+  els.phoneSaveHint.hidden = false;
+  els.phoneSaveHint.textContent = "Sending to phone...";
+  els.savePhone.textContent = "Sending...";
+  setStatus("Sending", "waiting");
+  state.phoneSaveTimer = setTimeout(() => {
+    els.phoneSaveHint.textContent =
+      "No phone response yet. Keep the phone page open, then tap Show on Phone again.";
+    els.savePhone.textContent = "Retry Phone";
+    setStatus("Phone Not Ready", "error");
+  }, 2500);
+}
+
+function showCapturedPhoto(dataUrl, fileName) {
+  state.lastCaptureUrl = dataUrl;
+  state.lastCaptureName = fileName || makeCaptureName("jpg");
+  els.photoPreview.src = dataUrl;
+  els.download.href = dataUrl;
+  els.download.download = state.lastCaptureName;
   els.photoPanel.hidden = false;
+  els.phoneSaveHint.hidden = true;
+  els.phoneSaveHint.textContent =
+    "Photo sent. On your phone, tap Save or Share to save it or send it to another app.";
+  els.savePhone.textContent = "Show on Phone";
+  els.capture.disabled = false;
+  setStatus("Photo Ready", "connected");
+}
+
+function confirmPhoneSaveReady() {
+  clearTimeout(state.phoneSaveTimer);
+  els.phoneSaveHint.hidden = false;
+  els.phoneSaveHint.textContent =
+    "Photo is ready on your phone. Tap Save or Share there to save it or send it to another app.";
+  els.savePhone.textContent = "Check Phone";
+  setStatus("Check Phone", "connected");
 }
 
 async function copyMobileUrl() {
@@ -139,6 +270,28 @@ function toggleMirror() {
   state.mirrored = !state.mirrored;
   els.video.classList.toggle("mirrored", state.mirrored);
   els.mirror.textContent = state.mirrored ? "Mirror On" : "Mirror Off";
+}
+
+function updatePreviewResolution() {
+  const update = () => {
+    if (els.video.videoWidth && els.video.videoHeight) {
+      els.previewResolution.textContent = `${els.video.videoWidth} x ${els.video.videoHeight}`;
+    }
+  };
+  update();
+  els.video.addEventListener("loadedmetadata", update, { once: true });
+  els.video.addEventListener("resize", update);
+}
+
+function formatResolution(settings = {}) {
+  if (!settings.width || !settings.height) return "Unknown";
+  const fps = settings.frameRate ? ` @ ${Math.round(settings.frameRate)} fps` : "";
+  return `${settings.width} x ${settings.height}${fps}`;
+}
+
+function makeCaptureName(extension) {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  return `backmirror-${timestamp}.${extension}`;
 }
 
 function send(payload) {
@@ -159,5 +312,7 @@ function resetPeer() {
   if (state.peer) state.peer.close();
   state.peer = null;
   state.remoteStream = null;
+  state.captureChannel = null;
+  state.incomingCapture = null;
   els.video.srcObject = null;
 }

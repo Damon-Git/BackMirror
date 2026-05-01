@@ -9,10 +9,16 @@
   <body class="mobile-shell">
     <main class="mobile-camera">
       <video id="localVideo" class="phone-video" autoplay playsinline muted></video>
+      <div id="cameraGate" class="camera-gate">
+        <strong>BackMirror Camera</strong>
+        <span id="cameraGateText">Starting camera...</span>
+        <button id="startCameraBtn" class="primary" type="button">Start Camera</button>
+      </div>
       <div class="mobile-topbar">
         <div>
           <h1>BackMirror</h1>
           <p id="mobileStatus">Starting camera...</p>
+          <p id="mobileResolution">Resolution unknown</p>
         </div>
         <span id="mobileBadge" class="status-badge waiting">Starting</span>
       </div>
@@ -20,8 +26,20 @@
         <button id="torchBtn" type="button" disabled>Torch Off</button>
         <button id="flipBtn" type="button">Use Front</button>
       </div>
+      <div id="mobilePhotoPanel" class="mobile-photo-panel" hidden>
+        <div class="mobile-photo-copy">
+          <strong>Photo ready</strong>
+          <span>Tap Save or Share on this phone. Desktop cannot open the mobile share sheet directly.</span>
+        </div>
+        <img id="mobilePhotoPreview" alt="Captured photo preview" />
+        <div class="mobile-photo-actions">
+          <button id="saveMobileBtn" class="primary" type="button">Save or Share</button>
+          <button id="closePhotoBtn" type="button">Close</button>
+        </div>
+      </div>
       <div id="mobileError" class="mobile-error" hidden></div>
     </main>
+    <canvas id="mobileCaptureCanvas" hidden></canvas>
     <script type="module" src="/mobile.js"></script>
   </body>
 </html>

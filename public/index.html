@@ -39,13 +39,32 @@
           <button id="newRoomBtn" type="button">New Room</button>
         </div>
 
+        <div class="quality-panel" aria-label="Camera quality">
+          <div>
+            <span>Phone camera</span>
+            <strong id="cameraResolution">Waiting</strong>
+          </div>
+          <div>
+            <span>Desktop preview</span>
+            <strong id="previewResolution">Waiting</strong>
+          </div>
+          <p>Final photos are captured on the phone to avoid WebRTC preview compression.</p>
+        </div>
+
         <div id="photoPanel" class="photo-panel" hidden>
           <img id="photoPreview" alt="Captured frame preview" />
-          <a id="downloadLink" class="download-link" download="backmirror-capture.png">Download Photo</a>
+          <p id="phoneSaveHint" class="save-hint" hidden>
+            Photo sent. On your phone, tap Save or Share to save it or send it to another app.
+          </p>
+          <div class="save-actions">
+            <a id="downloadLink" class="download-link" download="backmirror-capture.jpg">Save to Computer</a>
+            <button id="savePhoneBtn" type="button">Show on Phone</button>
+          </div>
         </div>
 
         <p class="disclaimer">
-          BackMirror helps you capture images locally. It does not diagnose, treat, or replace medical advice.
+          BackMirror helps you capture images locally. Image quality depends on camera, focus, light,
+          and browser support. It does not diagnose, treat, or replace medical advice.
         </p>
       </aside>
     </main>
