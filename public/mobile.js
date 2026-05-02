@@ -8,7 +8,8 @@ const state = {
   captureChannel: null,
   lastCapture: null,
   socketOpened: false,
-  countdownTimer: null
+  countdownTimer: null,
+  peerConfig: { iceServers: [] }
 };
 
 const els = {
@@ -49,6 +50,7 @@ async function start() {
   els.startCamera.disabled = true;
   els.startCamera.textContent = "启动中...";
   try {
+    await loadConfig();
     await startCamera();
     if (!state.socketOpened) openSocket();
   } catch (error) {
@@ -200,7 +202,7 @@ function openSocket() {
 
 async function createOffer() {
   state.peer?.close();
-  state.peer = new RTCPeerConnection({ iceServers: [] });
+  state.peer = new RTCPeerConnection(state.peerConfig);
   state.captureChannel = state.peer.createDataChannel("captures");
   state.captureChannel.addEventListener("message", async (event) => {
     await handleDataChannelMessage(event.data);
@@ -452,6 +454,18 @@ function sendCameraSettings() {
         facingMode: settings.facingMode
       }
     });
+  }
+}
+
+async function loadConfig() {
+  try {
+    const res = await fetch("/api/config", { cache: "no-store" });
+    const config = await res.json();
+    state.peerConfig = {
+      iceServers: Array.isArray(config.iceServers) ? config.iceServers : []
+    };
+  } catch {
+    state.peerConfig = { iceServers: [] };
   }
 }
 

@@ -16,28 +16,37 @@ const certPath = join(certDir, "cert.pem");
 const PORT = Number(process.env.PORT || 7443);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 7080);
 const HOST = process.env.HOST || "0.0.0.0";
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
 const ROOM_TTL_MS = 30 * 60 * 1000;
 const rooms = new Map();
+const iceServers = parseIceServers();
 
-ensureCertificate();
+let appServer;
 
-const httpsServer = createHttpsServer(
-  {
-    key: readFileSync(keyPath),
-    cert: readFileSync(certPath)
-  },
-  handleRequest
-);
+if (IS_PRODUCTION) {
+  appServer = createHttpServer(handleRequest);
+} else {
+  ensureCertificate();
+  appServer = createHttpsServer(
+    {
+      key: readFileSync(keyPath),
+      cert: readFileSync(certPath)
+    },
+    handleRequest
+  );
+}
 
-httpsServer.on("upgrade", handleUpgrade);
-httpsServer.on("error", handleListenError);
-httpsServer.listen(PORT, HOST, () => printStartup());
+appServer.on("upgrade", handleUpgrade);
+appServer.on("error", handleListenError);
+appServer.listen(PORT, HOST, () => printStartup());
 
-createHttpServer((req, res) => {
-  const host = (req.headers.host || "").replace(/:\d+$/, "");
-  res.writeHead(302, { Location: `https://${host}:${PORT}${req.url || "/"}` });
-  res.end();
-}).listen(HTTP_PORT, HOST);
+if (!IS_PRODUCTION) {
+  createHttpServer((req, res) => {
+    const host = (req.headers.host || "").replace(/:\d+$/, "");
+    res.writeHead(302, { Location: `https://${host}:${PORT}${req.url || "/"}` });
+    res.end();
+  }).listen(HTTP_PORT, HOST);
+}
 
 setInterval(cleanupRooms, 60_000).unref();
 
@@ -71,7 +80,7 @@ function ensureCertificate() {
   }
 }
 
-function handleRequest(req, res) {
+async function handleRequest(req, res) {
   const url = new URL(req.url || "/", `https://${req.headers.host}`);
 
   if (url.pathname === "/api/room") {
@@ -81,9 +90,14 @@ function handleRequest(req, res) {
     return;
   }
 
+  if (url.pathname === "/api/config") {
+    sendJson(res, { iceServers });
+    return;
+  }
+
   if (url.pathname === "/qr.svg") {
     const data = url.searchParams.get("data") || "";
-    sendQr(res, data);
+    await sendQr(res, data);
     return;
   }
 
@@ -110,9 +124,12 @@ function createRoom() {
 
 function getPublicOrigin(req) {
   const hostHeader = req.headers.host || `localhost:${PORT}`;
+  const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+  const protocol = forwardedProto || (IS_PRODUCTION ? "https" : "https");
   const hostname = hostHeader.split(":")[0];
   const ip = hostname === "localhost" || hostname === "127.0.0.1" ? getLanIp() : hostname;
-  return `https://${ip}:${PORT}`;
+  const host = IS_PRODUCTION ? hostHeader : `${ip}:${PORT}`;
+  return `${protocol}://${host}`;
 }
 
 function getLanIp() {
@@ -132,11 +149,29 @@ function sendJson(res, payload) {
   res.end(JSON.stringify(payload));
 }
 
-function sendQr(res, data) {
+async function sendQr(res, data) {
   if (!data) {
     res.writeHead(400);
     res.end("Missing data");
     return;
+  }
+
+  try {
+    const { default: QRCode } = await import("qrcode");
+    const svg = await QRCode.toString(data, {
+      type: "svg",
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 256
+    });
+    res.writeHead(200, {
+      "content-type": "image/svg+xml; charset=utf-8",
+      "cache-control": "no-store"
+    });
+    res.end(svg);
+    return;
+  } catch {
+    // Fall back to the optional local CLI so the app still runs before npm install.
   }
 
   const qr = spawnSync("qrencode", ["-t", "SVG", "-o", "-", data], { encoding: "utf8" });
@@ -329,16 +364,43 @@ function cleanupRooms() {
   }
 }
 
+function parseIceServers() {
+  if (process.env.ICE_SERVERS) {
+    try {
+      const parsed = JSON.parse(process.env.ICE_SERVERS);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return process.env.ICE_SERVERS.split(",")
+        .map((url) => url.trim())
+        .filter(Boolean)
+        .map((urls) => ({ urls }));
+    }
+  }
+
+  if (process.env.STUN_SERVERS) {
+    return process.env.STUN_SERVERS.split(",")
+      .map((url) => url.trim())
+      .filter(Boolean)
+      .map((urls) => ({ urls }));
+  }
+
+  return IS_PRODUCTION ? [{ urls: "stun:stun.l.google.com:19302" }] : [];
+}
+
 function printStartup() {
   const lan = getLanIp();
   console.log("");
   console.log("BackMirror is running.");
-  console.log(`Desktop: https://localhost:${PORT}`);
-  console.log(`LAN:     https://${lan}:${PORT}`);
+  console.log(`Mode:    ${IS_PRODUCTION ? "production HTTP behind platform HTTPS" : "local HTTPS"}`);
+  console.log(`Desktop: ${IS_PRODUCTION ? `http://localhost:${PORT}` : `https://localhost:${PORT}`}`);
+  if (!IS_PRODUCTION) console.log(`LAN:     https://${lan}:${PORT}`);
   console.log(`Host:    ${HOST}`);
+  console.log(`ICE:     ${iceServers.length ? iceServers.map((server) => server.urls).join(", ") : "none"}`);
   console.log("");
-  console.log("The browser will warn about the local self-signed HTTPS certificate.");
-  console.log("Accept it on both desktop and phone to allow camera access.");
+  if (!IS_PRODUCTION) {
+    console.log("The browser will warn about the local self-signed HTTPS certificate.");
+    console.log("Accept it on both desktop and phone to allow camera access.");
+  }
 }
 
 function handleListenError(error) {

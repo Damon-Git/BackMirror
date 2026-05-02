@@ -9,7 +9,8 @@ const state = {
   lastCaptureName: "",
   lastCaptureUrl: "",
   phoneSaveTimer: null,
-  countdownTimer: null
+  countdownTimer: null,
+  peerConfig: { iceServers: [] }
 };
 
 const els = {
@@ -54,6 +55,7 @@ async function startRoom() {
   els.photoLoading.hidden = true;
   els.phoneSaveHint.hidden = true;
 
+  await loadConfig();
   const res = await fetch("/api/room", { cache: "no-store" });
   const room = await res.json();
   state.roomId = room.roomId;
@@ -125,7 +127,7 @@ function openSocket(roomId) {
 }
 
 function createPeer() {
-  state.peer = new RTCPeerConnection({ iceServers: [] });
+  state.peer = new RTCPeerConnection(state.peerConfig);
 
   state.peer.addEventListener("datachannel", (event) => {
     if (event.channel.label === "captures") setupCaptureChannel(event.channel);
@@ -310,6 +312,18 @@ function formatResolution(settings = {}) {
   if (!settings.width || !settings.height) return "未知";
   const fps = settings.frameRate ? ` @ ${Math.round(settings.frameRate)} fps` : "";
   return `${settings.width} x ${settings.height}${fps}`;
+}
+
+async function loadConfig() {
+  try {
+    const res = await fetch("/api/config", { cache: "no-store" });
+    const config = await res.json();
+    state.peerConfig = {
+      iceServers: Array.isArray(config.iceServers) ? config.iceServers : []
+    };
+  } catch {
+    state.peerConfig = { iceServers: [] };
+  }
 }
 
 function makeCaptureName(extension) {

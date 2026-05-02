@@ -19,9 +19,14 @@ BackMirror 只帮助你在本地拍摄图像。它不提供诊断、治疗，也
 
 - Node.js 20 或更高版本。
 - `openssl` 需要在 PATH 中可用，用于生成本地 HTTPS 证书。
-- 可选：`qrencode` 需要在 PATH 中可用，用于生成二维码 SVG。如果缺少它，可以直接使用桌面端页面显示的手机访问链接。
+- npm 需要可用，用于安装二维码生成依赖。
+- 可选：`qrencode` 需要在 PATH 中可用。没有执行 `npm install` 时，服务端会尝试用它作为二维码生成降级方案。
 
-这个 MVP 没有 npm 依赖，因此即使 `npm`、`pnpm` 或 `yarn` 不可用，也可以运行。
+安装依赖：
+
+```bash
+npm install
+```
 
 ## 运行
 
@@ -48,6 +53,45 @@ https://192.168.1.23:7443
 ```
 
 在手机上打开这个局域网 URL，或扫描桌面端页面显示的二维码。
+
+## 发布试用
+
+最快的公网试用方式是部署到 Render 这类支持 Node.js 和 WebSocket 的平台。生产环境下 BackMirror 会启动普通 HTTP 服务，由部署平台提供公网 HTTPS；本地运行仍然使用自签 HTTPS 证书。
+
+### Render 部署
+
+1. 把仓库推到 GitHub。
+2. 在 Render 创建新的 Web Service，并连接这个仓库。
+3. 如果 Render 识别到 `render.yaml`，按提示创建服务即可；否则手动填写：
+   - Build Command: `npm install`
+   - Start Command: `npm start`
+   - Environment Variable: `NODE_ENV=production`
+4. 部署完成后，打开 Render 提供的 `https://...onrender.com` 链接。
+5. 用手机扫描电脑端页面的二维码，允许摄像头权限后开始试用。
+
+Render 免费实例可能会休眠，第一次打开会慢一些。这个部署模式适合外部试用；如果你只想在同一局域网内完全本地使用，继续按“运行”章节启动即可。
+
+### WebRTC 网络配置
+
+生产环境默认使用 Google 的公开 STUN 服务：
+
+```text
+stun:stun.l.google.com:19302
+```
+
+如果试用用户处在更复杂的网络环境，点对点连接仍可能失败。可以通过环境变量覆盖 ICE 配置：
+
+```bash
+STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
+```
+
+或者传入完整 JSON，便于配置 TURN：
+
+```bash
+ICE_SERVERS='[{"urls":"stun:stun.l.google.com:19302"},{"urls":"turn:turn.example.com:3478","username":"user","credential":"pass"}]'
+```
+
+TURN 会中转媒体流，隐私和成本模型都不同；公开试用阶段可以先不用，等真实网络测试结果出来后再决定。
 
 ## 推荐浏览器
 
