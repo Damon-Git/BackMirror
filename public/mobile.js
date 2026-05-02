@@ -14,6 +14,7 @@ const els = {
   video: document.querySelector("#localVideo"),
   gate: document.querySelector("#cameraGate"),
   gateText: document.querySelector("#cameraGateText"),
+  browserHint: document.querySelector("#browserHint"),
   startCamera: document.querySelector("#startCameraBtn"),
   status: document.querySelector("#mobileStatus"),
   resolution: document.querySelector("#mobileResolution"),
@@ -38,19 +39,20 @@ els.closePhoto.addEventListener("click", () => {
 });
 
 start();
+updateBrowserHint();
 
 async function start() {
   els.error.hidden = true;
   els.startCamera.disabled = true;
-  els.startCamera.textContent = "Starting...";
+  els.startCamera.textContent = "启动中...";
   try {
     await startCamera();
     if (!state.socketOpened) openSocket();
   } catch (error) {
-    showError(error.message || "Camera failed to start.");
+    showError(error.message || "摄像头启动失败。");
   } finally {
     els.startCamera.disabled = false;
-    els.startCamera.textContent = "Retry Camera";
+    els.startCamera.textContent = "重试摄像头";
   }
 }
 
@@ -61,11 +63,11 @@ async function startCamera() {
   }
 
   if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error("This browser does not support camera access. Try Safari, Chrome, or Edge.");
+    throw new Error("当前浏览器不支持摄像头访问。请改用 Chrome 或 Safari。");
   }
 
-  setStatus("Requesting camera permission...", "waiting");
-  setGate("Requesting camera permission...");
+  setStatus("正在请求摄像头权限...", "waiting");
+  setGate("正在请求摄像头权限...");
   state.stream = await getCameraStream();
 
   els.video.srcObject = state.stream;
@@ -74,7 +76,7 @@ async function startCamera() {
   await preferContinuousFocus();
   updateTorchSupport();
   updateResolution();
-  setStatus("Camera ready", "waiting");
+  setStatus("摄像头已就绪", "waiting");
   els.gate.hidden = true;
   sendCameraSettings();
 }
@@ -82,7 +84,7 @@ async function startCamera() {
 async function getCameraStream() {
   const attempts = [
     {
-      label: "high resolution",
+      label: "高清摄像头",
       constraints: {
         video: {
           facingMode: { ideal: state.facingMode },
@@ -94,7 +96,7 @@ async function getCameraStream() {
       }
     },
     {
-      label: "1080p",
+      label: "1080p 摄像头",
       constraints: {
         video: {
           facingMode: { ideal: state.facingMode },
@@ -106,14 +108,14 @@ async function getCameraStream() {
       }
     },
     {
-      label: "default rear camera",
+      label: "默认后置摄像头",
       constraints: {
         video: { facingMode: { ideal: state.facingMode } },
         audio: false
       }
     },
     {
-      label: "any camera",
+      label: "任意摄像头",
       constraints: { video: true, audio: false }
     }
   ];
@@ -121,21 +123,21 @@ async function getCameraStream() {
   let lastError;
   for (const attempt of attempts) {
     try {
-      setGate(`Opening ${attempt.label}...`);
+      setGate(`正在打开${attempt.label}...`);
       return await withTimeout(
         navigator.mediaDevices.getUserMedia(attempt.constraints),
         8000,
-        `Timed out opening ${attempt.label}.`
+        `打开${attempt.label}超时。`
       );
     } catch (error) {
       lastError = error;
     }
   }
-  throw lastError || new Error("Camera failed to start.");
+  throw lastError || new Error("摄像头启动失败。");
 }
 
 async function playVideoWithTimeout() {
-  await withTimeout(els.video.play(), 5000, "Camera preview could not start.");
+  await withTimeout(els.video.play(), 5000, "摄像头预览无法启动。");
 }
 
 async function waitForVideoFrame() {
@@ -146,7 +148,7 @@ async function waitForVideoFrame() {
       els.video.addEventListener("playing", resolve, { once: true });
     }),
     5000,
-    "Camera opened but no video frame was received."
+    "摄像头已打开，但没有收到视频画面。请尝试 Chrome 或 Safari。"
   );
 }
 
@@ -165,14 +167,14 @@ function openSocket() {
     state.socketOpened = true;
     createOffer();
   });
-  state.socket.addEventListener("close", () => setStatus("Disconnected", "error"));
-  state.socket.addEventListener("error", () => setStatus("Connection error", "error"));
+  state.socket.addEventListener("close", () => setStatus("连接已断开", "error"));
+  state.socket.addEventListener("error", () => setStatus("连接错误", "error"));
   state.socket.addEventListener("message", async (event) => {
     const message = JSON.parse(event.data);
 
     if (message.type === "peer-answer" && state.peer) {
       await state.peer.setRemoteDescription(message.answer);
-      setStatus("Streaming to desktop", "connected");
+      setStatus("正在传输到电脑", "connected");
     }
 
     if (message.type === "ice-candidate" && message.candidate && state.peer) {
@@ -188,7 +190,7 @@ function openSocket() {
     }
 
     if (message.type === "peer-left") {
-      setStatus("Desktop disconnected", "error");
+      setStatus("电脑端已断开", "error");
     }
   });
 }
@@ -211,10 +213,10 @@ async function createOffer() {
 
   state.peer.addEventListener("connectionstatechange", () => {
     const status = state.peer.connectionState;
-    if (status === "connected") setStatus("Streaming to desktop", "connected");
-    if (status === "connecting") setStatus("Connecting to desktop", "waiting");
+    if (status === "connected") setStatus("正在传输到电脑", "connected");
+    if (status === "connecting") setStatus("正在连接电脑", "waiting");
     if (status === "failed" || status === "disconnected" || status === "closed") {
-      setStatus("Disconnected", "error");
+      setStatus("连接已断开", "error");
     }
   });
 
@@ -223,7 +225,7 @@ async function createOffer() {
   await raisePreviewBitrate();
   send({ type: "peer-offer", offer });
   sendCameraSettings();
-  setStatus("Connecting to desktop", "waiting");
+  setStatus("正在连接电脑", "waiting");
 }
 
 async function toggleTorch() {
@@ -235,12 +237,12 @@ async function toggleTorch() {
   await track.applyConstraints({ advanced: [{ torch: state.torchOn }] }).catch(() => {
     state.torchOn = false;
   });
-  els.torch.textContent = state.torchOn ? "Torch On" : "Torch Off";
+  els.torch.textContent = state.torchOn ? "手电筒开" : "手电筒关";
 }
 
 async function flipCamera() {
   state.facingMode = state.facingMode === "environment" ? "user" : "environment";
-  els.flip.textContent = state.facingMode === "environment" ? "Use Front" : "Use Rear";
+  els.flip.textContent = state.facingMode === "environment" ? "切到前摄" : "切到后摄";
   await startCamera();
   if (state.socket?.readyState === WebSocket.OPEN) await createOffer();
 }
@@ -262,7 +264,7 @@ async function preferContinuousFocus() {
 async function captureLocalPhoto(id = String(Date.now())) {
   try {
     if (!els.video.videoWidth || !els.video.videoHeight) {
-      throw new Error("Camera video is not ready yet.");
+      throw new Error("摄像头画面尚未就绪。");
     }
 
     els.canvas.width = els.video.videoWidth;
@@ -273,20 +275,19 @@ async function captureLocalPhoto(id = String(Date.now())) {
     const dataUrl = els.canvas.toDataURL("image/jpeg", 0.94);
     const fileName = makeCaptureName("jpg");
     state.lastCapture = { dataUrl, fileName };
-    showMobilePreview(dataUrl, false);
     send({ type: "capture-ready", id, fileName, width: els.canvas.width, height: els.canvas.height });
     await sendCaptureOverDataChannel(id, dataUrl);
-    setStatus("Photo captured", "connected");
+    setStatus("照片已拍摄", "connected");
   } catch (error) {
-    send({ type: "capture-error", message: error.message || "Capture failed" });
-    showError(error.message || "Capture failed.");
+    send({ type: "capture-error", message: error.message || "拍照失败" });
+    showError(error.message || "拍照失败。");
   }
 }
 
 async function sendCaptureOverDataChannel(id, dataUrl) {
   const channel = state.captureChannel;
   if (!channel || channel.readyState !== "open") {
-    throw new Error("Photo channel is not ready.");
+    throw new Error("照片传输通道尚未就绪。");
   }
 
   const chunkSize = 32 * 1024;
@@ -331,11 +332,11 @@ async function handleDataChannelMessage(data) {
 
 function showPhoneSavePanel(requestId) {
   if (!state.lastCapture) {
-    showError("No photo is ready on this phone yet.");
+    showError("手机端还没有可保存的照片。");
     return;
   }
   showMobilePreview(state.lastCapture.dataUrl, true);
-  setStatus("Tap Save or Share", "connected");
+  setStatus("请点保存或分享", "connected");
   send({ type: "phone-save-ready", id: requestId });
   if (state.captureChannel?.readyState === "open") {
     state.captureChannel.send(JSON.stringify({ type: "phone-save-ready", id: requestId }));
@@ -350,8 +351,8 @@ async function saveLastCapture() {
   if (navigator.canShare?.({ files: [file] })) {
     await navigator.share({
       files: [file],
-      title: "BackMirror photo",
-      text: "Photo captured locally with BackMirror."
+      title: "BackMirror 照片",
+      text: "这张照片由 BackMirror 在本地拍摄。"
     });
     return;
   }
@@ -397,7 +398,7 @@ function updateTorchSupport() {
   const capabilities = track?.getCapabilities?.();
   const supported = Boolean(capabilities?.torch);
   els.torch.disabled = !supported;
-  els.torch.textContent = supported ? "Torch Off" : "No Torch";
+  els.torch.textContent = supported ? "手电筒关" : "无手电筒";
 }
 
 function updateResolution() {
@@ -405,7 +406,7 @@ function updateResolution() {
   els.resolution.textContent =
     settings.width && settings.height
       ? `${settings.width} x ${settings.height}${settings.frameRate ? ` @ ${Math.round(settings.frameRate)} fps` : ""}`
-      : "Resolution unknown";
+      : "分辨率未知";
 }
 
 function sendCameraSettings() {
@@ -440,7 +441,7 @@ function setStatus(label, kind) {
 }
 
 function showError(message) {
-  setStatus("Camera error", "error");
+  setStatus("摄像头错误", "error");
   els.error.hidden = false;
   els.error.textContent = message;
   els.gate.hidden = false;
@@ -449,4 +450,27 @@ function showError(message) {
 
 function setGate(message) {
   els.gateText.textContent = message;
+}
+
+function updateBrowserHint() {
+  const ua = navigator.userAgent;
+  const isChrome = /Chrome|CriOS/i.test(ua) && !/Edg|OPR|SamsungBrowser/i.test(ua);
+  const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|Android/i.test(ua);
+  const isEmbedded = /MicroMessenger|QQBrowser|Quark|UCBrowser|HeyTapBrowser|VivoBrowser|MiuiBrowser|HuaweiBrowser/i.test(
+    ua
+  );
+
+  if (isChrome || isSafari) {
+    els.browserHint.textContent = "当前浏览器兼容性较好。请允许摄像头权限，并保持此页面打开。";
+    return;
+  }
+
+  if (isEmbedded) {
+    els.browserHint.textContent =
+      "检测到可能是内置浏览器。若出现黑屏或无法保存，请复制链接后改用 Chrome 或 Safari 打开。";
+    return;
+  }
+
+  els.browserHint.textContent =
+    "建议使用 Chrome 或 Safari。部分系统浏览器可能无法稳定调用摄像头或 WebRTC。";
 }

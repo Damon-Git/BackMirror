@@ -18,11 +18,19 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
   background: var(--bg);
   color: var(--text);
+}
+
+.desktop-shell {
+  height: 100dvh;
+  overflow: hidden;
 }
 
 button,
@@ -64,13 +72,14 @@ button.primary {
 
 .desktop-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
-  min-height: 100vh;
+  grid-template-columns: minmax(0, 1fr) clamp(340px, 24vw, 430px);
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .viewer-panel {
   position: relative;
-  min-height: 100vh;
+  min-height: 0;
   background: #060807;
   overflow: hidden;
 }
@@ -78,7 +87,6 @@ button.primary {
 .preview-video {
   width: 100%;
   height: 100%;
-  min-height: 100vh;
   object-fit: contain;
   background: #050605;
 }
@@ -106,10 +114,13 @@ button.primary {
 .control-panel {
   border-left: 1px solid var(--line);
   background: var(--panel);
-  padding: 24px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
 .brand-row {
@@ -125,7 +136,7 @@ p {
 }
 
 h1 {
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.1;
 }
 
@@ -159,17 +170,26 @@ h1 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel-soft);
-  padding: 16px;
+  padding: 12px;
 }
 
 .qr-card img {
   display: block;
   width: 100%;
+  max-height: min(34vh, 360px);
   aspect-ratio: 1;
   object-fit: contain;
   background: white;
   border-radius: 4px;
   padding: 10px;
+}
+
+.phone-paired .qr-card {
+  padding: 10px;
+}
+
+.phone-paired .qr-card img {
+  display: none;
 }
 
 .mobile-link-row {
@@ -191,7 +211,7 @@ h1 {
 .toolbar {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .toolbar .primary {
@@ -203,8 +223,8 @@ h1 {
   border-radius: var(--radius);
   background: #111513;
   display: grid;
-  gap: 12px;
-  padding: 14px;
+  gap: 10px;
+  padding: 12px;
 }
 
 .quality-panel div {
@@ -234,13 +254,20 @@ h1 {
 .photo-panel {
   display: grid;
   gap: 12px;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #111513;
+  padding: 10px;
 }
 
 .photo-panel img {
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  max-height: min(30vh, 320px);
+  border: 0;
+  border-radius: 4px;
   background: #050605;
+  object-fit: contain;
 }
 
 .save-hint {
@@ -257,6 +284,8 @@ h1 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  position: relative;
+  z-index: 1;
 }
 
 .download-link,
@@ -265,8 +294,11 @@ h1 {
 }
 
 .disclaimer {
-  margin-top: auto;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
   font-size: 13px;
+  line-height: 1.45;
+  padding-top: 12px;
 }
 
 .mobile-shell {
@@ -313,6 +345,14 @@ h1 {
 .camera-gate span {
   color: var(--muted);
   line-height: 1.45;
+}
+
+.browser-hint {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  padding-top: 10px;
 }
 
 .mobile-topbar,
@@ -412,18 +452,22 @@ h1 {
 @media (max-width: 900px) {
   .desktop-layout {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
   }
 
   .viewer-panel {
-    min-height: 58vh;
+    min-height: 58dvh;
   }
 
   .preview-video {
-    min-height: 58vh;
+    min-height: 58dvh;
   }
 
   .control-panel {
     border-left: 0;
     border-top: 1px solid var(--line);
+    overflow: visible;
   }
 }

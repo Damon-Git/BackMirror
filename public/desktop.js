@@ -40,11 +40,12 @@ startRoom();
 
 async function startRoom() {
   closeCurrent();
-  setStatus("Waiting", "waiting");
+  document.body.classList.remove("phone-paired");
+  setStatus("等待中", "waiting");
   els.capture.disabled = true;
   els.empty.hidden = false;
-  els.cameraResolution.textContent = "Waiting";
-  els.previewResolution.textContent = "Waiting";
+  els.cameraResolution.textContent = "等待中";
+  els.previewResolution.textContent = "等待中";
   els.photoPanel.hidden = true;
   els.phoneSaveHint.hidden = true;
 
@@ -61,14 +62,15 @@ function openSocket(roomId) {
   const protocol = location.protocol === "https:" ? "wss" : "ws";
   state.socket = new WebSocket(`${protocol}://${location.host}/ws?room=${roomId}&role=desktop`);
 
-  state.socket.addEventListener("open", () => setStatus("Waiting", "waiting"));
-  state.socket.addEventListener("close", () => setStatus("Disconnected", "error"));
-  state.socket.addEventListener("error", () => setStatus("Disconnected", "error"));
+  state.socket.addEventListener("open", () => setStatus("等待中", "waiting"));
+  state.socket.addEventListener("close", () => setStatus("已断开", "error"));
+  state.socket.addEventListener("error", () => setStatus("已断开", "error"));
   state.socket.addEventListener("message", async (event) => {
     const message = JSON.parse(event.data);
 
     if (message.type === "peer-joined" && message.role === "phone") {
-      setStatus("Pairing", "waiting");
+      setStatus("配对中", "waiting");
+      document.body.classList.add("phone-paired");
       resetPeer();
       createPeer();
     }
@@ -90,7 +92,7 @@ function openSocket(roomId) {
     }
 
     if (message.type === "capture-ready") {
-      setStatus("Receiving Photo", "waiting");
+      setStatus("接收照片", "waiting");
       if (!state.incomingCapture || state.incomingCapture.id !== message.id) {
         state.incomingCapture = {
           id: message.id,
@@ -101,7 +103,7 @@ function openSocket(roomId) {
     }
 
     if (message.type === "capture-error") {
-      setStatus("Capture Failed", "error");
+      setStatus("拍照失败", "error");
       els.capture.disabled = false;
     }
 
@@ -110,7 +112,8 @@ function openSocket(roomId) {
     }
 
     if (message.type === "peer-left") {
-      setStatus("Disconnected", "error");
+      setStatus("已断开", "error");
+      document.body.classList.remove("phone-paired");
       els.capture.disabled = true;
     }
   });
@@ -133,16 +136,16 @@ function createPeer() {
     els.video.srcObject = stream;
     els.empty.hidden = true;
     els.capture.disabled = state.captureChannel?.readyState !== "open";
-    setStatus("Connected", "connected");
+    setStatus("已连接", "connected");
     updatePreviewResolution();
   });
 
   state.peer.addEventListener("connectionstatechange", () => {
     const status = state.peer.connectionState;
-    if (status === "connected") setStatus("Connected", "connected");
-    if (status === "connecting") setStatus("Connecting", "waiting");
+    if (status === "connected") setStatus("已连接", "connected");
+    if (status === "connecting") setStatus("连接中", "waiting");
     if (status === "failed" || status === "disconnected" || status === "closed") {
-      setStatus("Disconnected", "error");
+      setStatus("已断开", "error");
       els.capture.disabled = true;
     }
   });
@@ -196,14 +199,14 @@ function handleCaptureData(data) {
 
 function requestPhoneCapture() {
   if (!state.captureChannel || state.captureChannel.readyState !== "open") {
-    setStatus("Camera Not Ready", "error");
+    setStatus("摄像头未就绪", "error");
     return;
   }
 
   els.capture.disabled = true;
   els.photoPanel.hidden = true;
   els.phoneSaveHint.hidden = true;
-  setStatus("Capturing", "waiting");
+  setStatus("拍照中", "waiting");
   send({ type: "capture-request", id: crypto.randomUUID?.() || String(Date.now()) });
 }
 
@@ -223,14 +226,14 @@ function requestPhoneSave() {
 
   clearTimeout(state.phoneSaveTimer);
   els.phoneSaveHint.hidden = false;
-  els.phoneSaveHint.textContent = "Sending to phone...";
-  els.savePhone.textContent = "Sending...";
-  setStatus("Sending", "waiting");
+  els.phoneSaveHint.textContent = "正在发送到手机...";
+  els.savePhone.textContent = "发送中...";
+  setStatus("发送中", "waiting");
   state.phoneSaveTimer = setTimeout(() => {
     els.phoneSaveHint.textContent =
-      "No phone response yet. Keep the phone page open, then tap Show on Phone again.";
-    els.savePhone.textContent = "Retry Phone";
-    setStatus("Phone Not Ready", "error");
+      "手机暂未响应。请保持手机页面打开，然后再次点击“发送到手机”。";
+    els.savePhone.textContent = "重试发送";
+    setStatus("手机未响应", "error");
   }, 2500);
 }
 
@@ -243,33 +246,33 @@ function showCapturedPhoto(dataUrl, fileName) {
   els.photoPanel.hidden = false;
   els.phoneSaveHint.hidden = true;
   els.phoneSaveHint.textContent =
-    "Photo sent. On your phone, tap Save or Share to save it or send it to another app.";
-  els.savePhone.textContent = "Show on Phone";
+    "照片已发送到手机。请在手机端点击“保存或分享”，保存图片或发送到其他 App。";
+  els.savePhone.textContent = "发送到手机";
   els.capture.disabled = false;
-  setStatus("Photo Ready", "connected");
+  setStatus("照片已就绪", "connected");
 }
 
 function confirmPhoneSaveReady() {
   clearTimeout(state.phoneSaveTimer);
   els.phoneSaveHint.hidden = false;
   els.phoneSaveHint.textContent =
-    "Photo is ready on your phone. Tap Save or Share there to save it or send it to another app.";
-  els.savePhone.textContent = "Check Phone";
-  setStatus("Check Phone", "connected");
+    "照片已显示在手机上。请在手机端点击“保存或分享”，保存图片或发送到其他 App。";
+  els.savePhone.textContent = "查看手机";
+  setStatus("查看手机", "connected");
 }
 
 async function copyMobileUrl() {
   await navigator.clipboard.writeText(els.mobileUrl.value).catch(() => {});
-  els.copy.textContent = "Copied";
+  els.copy.textContent = "已复制";
   setTimeout(() => {
-    els.copy.textContent = "Copy";
+    els.copy.textContent = "复制";
   }, 1200);
 }
 
 function toggleMirror() {
   state.mirrored = !state.mirrored;
   els.video.classList.toggle("mirrored", state.mirrored);
-  els.mirror.textContent = state.mirrored ? "Mirror On" : "Mirror Off";
+  els.mirror.textContent = state.mirrored ? "镜像开启" : "镜像关闭";
 }
 
 function updatePreviewResolution() {
@@ -284,7 +287,7 @@ function updatePreviewResolution() {
 }
 
 function formatResolution(settings = {}) {
-  if (!settings.width || !settings.height) return "Unknown";
+  if (!settings.width || !settings.height) return "未知";
   const fps = settings.frameRate ? ` @ ${Math.round(settings.frameRate)} fps` : "";
   return `${settings.width} x ${settings.height}${fps}`;
 }

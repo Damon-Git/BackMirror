@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -10,31 +10,32 @@
     <main class="mobile-camera">
       <video id="localVideo" class="phone-video" autoplay playsinline muted></video>
       <div id="cameraGate" class="camera-gate">
-        <strong>BackMirror Camera</strong>
-        <span id="cameraGateText">Starting camera...</span>
-        <button id="startCameraBtn" class="primary" type="button">Start Camera</button>
+        <strong>BackMirror 摄像头</strong>
+        <span id="cameraGateText">正在启动摄像头...</span>
+        <p id="browserHint" class="browser-hint">建议使用 Chrome 或 Safari 打开；部分系统浏览器和 App 内置浏览器可能黑屏。</p>
+        <button id="startCameraBtn" class="primary" type="button">启动摄像头</button>
       </div>
       <div class="mobile-topbar">
         <div>
           <h1>BackMirror</h1>
-          <p id="mobileStatus">Starting camera...</p>
-          <p id="mobileResolution">Resolution unknown</p>
+          <p id="mobileStatus">正在启动摄像头...</p>
+          <p id="mobileResolution">分辨率未知</p>
         </div>
-        <span id="mobileBadge" class="status-badge waiting">Starting</span>
+        <span id="mobileBadge" class="status-badge waiting">启动中</span>
       </div>
       <div class="mobile-actions">
-        <button id="torchBtn" type="button" disabled>Torch Off</button>
-        <button id="flipBtn" type="button">Use Front</button>
+        <button id="torchBtn" type="button" disabled>无手电筒</button>
+        <button id="flipBtn" type="button">切到前摄</button>
       </div>
       <div id="mobilePhotoPanel" class="mobile-photo-panel" hidden>
         <div class="mobile-photo-copy">
-          <strong>Photo ready</strong>
-          <span>Tap Save or Share on this phone. Desktop cannot open the mobile share sheet directly.</span>
+          <strong>照片已就绪</strong>
+          <span>请在这台手机上点击“保存或分享”。电脑端无法直接打开手机的系统分享面板。</span>
         </div>
-        <img id="mobilePhotoPreview" alt="Captured photo preview" />
+        <img id="mobilePhotoPreview" alt="拍摄照片预览" />
         <div class="mobile-photo-actions">
-          <button id="saveMobileBtn" class="primary" type="button">Save or Share</button>
-          <button id="closePhotoBtn" type="button">Close</button>
+          <button id="saveMobileBtn" class="primary" type="button">保存或分享</button>
+          <button id="closePhotoBtn" type="button">关闭</button>
         </div>
       </div>
       <div id="mobileError" class="mobile-error" hidden></div>

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,11 +8,11 @@
   </head>
   <body class="desktop-shell">
     <main class="desktop-layout">
-      <section class="viewer-panel" aria-label="Live camera preview">
+      <section class="viewer-panel" aria-label="实时摄像头预览">
         <video id="remoteVideo" class="preview-video mirrored" autoplay playsinline muted></video>
         <div id="emptyState" class="empty-state">
-          <strong>Waiting for phone camera</strong>
-          <span>Scan the QR code with your phone on the same Wi-Fi network.</span>
+          <strong>等待手机摄像头连接</strong>
+          <span>请用同一局域网内的手机扫描二维码。</span>
         </div>
       </section>
 
@@ -20,51 +20,49 @@
         <div class="brand-row">
           <div>
             <h1>BackMirror</h1>
-            <p>Private local camera mirror</p>
+            <p>本地优先的私密摄像头镜像工具</p>
           </div>
-          <span id="statusBadge" class="status-badge waiting">Waiting</span>
+          <span id="statusBadge" class="status-badge waiting">等待中</span>
         </div>
 
         <div class="qr-card">
-          <img id="qrImage" alt="Phone connection QR code" />
+          <img id="qrImage" alt="手机连接二维码" />
           <div class="mobile-link-row">
-            <input id="mobileUrl" readonly aria-label="Mobile camera URL" />
-            <button id="copyLink" type="button">Copy</button>
+            <input id="mobileUrl" readonly aria-label="手机摄像头链接" />
+            <button id="copyLink" type="button">复制</button>
           </div>
         </div>
 
-        <div class="toolbar" aria-label="Desktop controls">
-          <button id="captureBtn" class="primary" type="button" disabled>Capture</button>
-          <button id="mirrorBtn" type="button">Mirror On</button>
-          <button id="newRoomBtn" type="button">New Room</button>
+        <div class="toolbar" aria-label="电脑端控制">
+          <button id="captureBtn" class="primary" type="button" disabled>拍照</button>
+          <button id="mirrorBtn" type="button">镜像开启</button>
+          <button id="newRoomBtn" type="button">新房间</button>
         </div>
 
-        <div class="quality-panel" aria-label="Camera quality">
+        <div class="quality-panel" aria-label="摄像头画质">
           <div>
-            <span>Phone camera</span>
-            <strong id="cameraResolution">Waiting</strong>
+            <span>手机摄像头</span>
+            <strong id="cameraResolution">等待中</strong>
           </div>
           <div>
-            <span>Desktop preview</span>
-            <strong id="previewResolution">Waiting</strong>
+            <span>电脑预览</span>
+            <strong id="previewResolution">等待中</strong>
           </div>
-          <p>Final photos are captured on the phone to avoid WebRTC preview compression.</p>
         </div>
 
         <div id="photoPanel" class="photo-panel" hidden>
-          <img id="photoPreview" alt="Captured frame preview" />
+          <img id="photoPreview" alt="拍摄照片预览" />
           <p id="phoneSaveHint" class="save-hint" hidden>
-            Photo sent. On your phone, tap Save or Share to save it or send it to another app.
+            照片已发送到手机。请在手机端点击“保存或分享”，保存图片或发送到其他 App。
           </p>
           <div class="save-actions">
-            <a id="downloadLink" class="download-link" download="backmirror-capture.jpg">Save to Computer</a>
-            <button id="savePhoneBtn" type="button">Show on Phone</button>
+            <a id="downloadLink" class="download-link" download="backmirror-capture.jpg">保存到电脑</a>
+            <button id="savePhoneBtn" type="button">发送到手机</button>
           </div>
         </div>
 
         <p class="disclaimer">
-          BackMirror helps you capture images locally. Image quality depends on camera, focus, light,
-          and browser support. It does not diagnose, treat, or replace medical advice.
+          BackMirror 只帮助你在本地拍摄图像。图像质量取决于摄像头、对焦、光线和浏览器支持情况；它不提供诊断、治疗，也不能替代专业医疗建议。
         </p>
       </aside>
     </main>
