@@ -10,6 +10,10 @@
     <main class="desktop-layout">
       <section class="viewer-panel" aria-label="实时摄像头预览">
         <video id="remoteVideo" class="preview-video mirrored" autoplay playsinline muted></video>
+        <div id="desktopCountdown" class="countdown-overlay" hidden>
+          <strong id="desktopCountdownNumber">3</strong>
+          <span>准备拍照</span>
+        </div>
         <div id="emptyState" class="empty-state">
           <strong>等待手机摄像头连接</strong>
           <span>请用同一局域网内的手机扫描二维码。</span>

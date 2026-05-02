@@ -95,6 +95,30 @@ button.primary {
   transform: scaleX(-1);
 }
 
+.countdown-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.22);
+  color: white;
+  pointer-events: none;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65);
+}
+
+.countdown-overlay strong {
+  font-size: clamp(88px, 15vw, 190px);
+  line-height: 0.9;
+}
+
+.countdown-overlay span {
+  font-size: 18px;
+  font-weight: 700;
+}
+
 .empty-state {
   position: absolute;
   inset: 0;
@@ -320,6 +344,10 @@ h1 {
   object-fit: cover;
   background: #050605;
   z-index: 0;
+}
+
+.mobile-countdown strong {
+  font-size: clamp(96px, 30vw, 180px);
 }
 
 .camera-gate {

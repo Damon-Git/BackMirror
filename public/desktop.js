@@ -8,7 +8,8 @@ const state = {
   incomingCapture: null,
   lastCaptureName: "",
   lastCaptureUrl: "",
-  phoneSaveTimer: null
+  phoneSaveTimer: null,
+  countdownTimer: null
 };
 
 const els = {
@@ -27,7 +28,9 @@ const els = {
   download: document.querySelector("#downloadLink"),
   savePhone: document.querySelector("#savePhoneBtn"),
   cameraResolution: document.querySelector("#cameraResolution"),
-  previewResolution: document.querySelector("#previewResolution")
+  previewResolution: document.querySelector("#previewResolution"),
+  countdown: document.querySelector("#desktopCountdown"),
+  countdownNumber: document.querySelector("#desktopCountdownNumber")
 };
 
 els.copy.addEventListener("click", copyMobileUrl);
@@ -206,8 +209,11 @@ function requestPhoneCapture() {
   els.capture.disabled = true;
   els.photoPanel.hidden = true;
   els.phoneSaveHint.hidden = true;
-  setStatus("拍照中", "waiting");
-  send({ type: "capture-request", id: crypto.randomUUID?.() || String(Date.now()) });
+  setStatus("倒计时", "waiting");
+  const delaySeconds = 3;
+  const id = crypto.randomUUID?.() || String(Date.now());
+  runCountdown(delaySeconds);
+  send({ type: "capture-request", id, delaySeconds });
 }
 
 function requestPhoneSave() {
@@ -306,12 +312,32 @@ function setStatus(label, kind) {
   els.badge.className = `status-badge ${kind}`;
 }
 
+function runCountdown(seconds) {
+  clearInterval(state.countdownTimer);
+  let remaining = seconds;
+  els.countdownNumber.textContent = String(remaining);
+  els.countdown.hidden = false;
+
+  state.countdownTimer = setInterval(() => {
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(state.countdownTimer);
+      els.countdown.hidden = true;
+      setStatus("拍照中", "waiting");
+      return;
+    }
+    els.countdownNumber.textContent = String(remaining);
+  }, 1000);
+}
+
 function closeCurrent() {
   resetPeer();
   if (state.socket) state.socket.close();
 }
 
 function resetPeer() {
+  clearInterval(state.countdownTimer);
+  els.countdown.hidden = true;
   if (state.peer) state.peer.close();
   state.peer = null;
   state.remoteStream = null;

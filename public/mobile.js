@@ -7,7 +7,8 @@ const state = {
   torchOn: false,
   captureChannel: null,
   lastCapture: null,
-  socketOpened: false
+  socketOpened: false,
+  countdownTimer: null
 };
 
 const els = {
@@ -26,7 +27,9 @@ const els = {
   photoPreview: document.querySelector("#mobilePhotoPreview"),
   saveMobile: document.querySelector("#saveMobileBtn"),
   closePhoto: document.querySelector("#closePhotoBtn"),
-  canvas: document.querySelector("#mobileCaptureCanvas")
+  canvas: document.querySelector("#mobileCaptureCanvas"),
+  countdown: document.querySelector("#mobileCountdown"),
+  countdownNumber: document.querySelector("#mobileCountdownNumber")
 };
 
 els.startCamera.addEventListener("click", start);
@@ -182,7 +185,7 @@ function openSocket() {
     }
 
     if (message.type === "capture-request") {
-      await captureLocalPhoto(message.id);
+      await captureWithCountdown(message.id, message.delaySeconds || 0);
     }
 
     if (message.type === "save-to-phone") {
@@ -282,6 +285,34 @@ async function captureLocalPhoto(id = String(Date.now())) {
     send({ type: "capture-error", message: error.message || "拍照失败" });
     showError(error.message || "拍照失败。");
   }
+}
+
+async function captureWithCountdown(id, delaySeconds) {
+  if (delaySeconds > 0) {
+    await runCountdown(delaySeconds);
+  }
+  await captureLocalPhoto(id);
+}
+
+function runCountdown(seconds) {
+  clearInterval(state.countdownTimer);
+  return new Promise((resolve) => {
+    let remaining = seconds;
+    els.countdownNumber.textContent = String(remaining);
+    els.countdown.hidden = false;
+    setStatus("准备拍照", "waiting");
+
+    state.countdownTimer = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(state.countdownTimer);
+        els.countdown.hidden = true;
+        resolve();
+        return;
+      }
+      els.countdownNumber.textContent = String(remaining);
+    }, 1000);
+  });
 }
 
 async function sendCaptureOverDataChannel(id, dataUrl) {
