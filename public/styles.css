@@ -294,6 +294,41 @@ h1 {
   object-fit: contain;
 }
 
+.photo-loading {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.photo-loading strong {
+  color: var(--text);
+}
+
+.photo-loading p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid rgba(255, 255, 255, 0.18);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .save-hint {
   border: 1px solid var(--accent);
   border-radius: var(--radius);

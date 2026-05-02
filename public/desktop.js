@@ -23,6 +23,7 @@ const els = {
   mirror: document.querySelector("#mirrorBtn"),
   newRoom: document.querySelector("#newRoomBtn"),
   photoPanel: document.querySelector("#photoPanel"),
+  photoLoading: document.querySelector("#photoLoading"),
   photoPreview: document.querySelector("#photoPreview"),
   phoneSaveHint: document.querySelector("#phoneSaveHint"),
   download: document.querySelector("#downloadLink"),
@@ -50,6 +51,7 @@ async function startRoom() {
   els.cameraResolution.textContent = "等待中";
   els.previewResolution.textContent = "等待中";
   els.photoPanel.hidden = true;
+  els.photoLoading.hidden = true;
   els.phoneSaveHint.hidden = true;
 
   const res = await fetch("/api/room", { cache: "no-store" });
@@ -207,7 +209,9 @@ function requestPhoneCapture() {
   }
 
   els.capture.disabled = true;
-  els.photoPanel.hidden = true;
+  els.photoPanel.hidden = false;
+  els.photoLoading.hidden = true;
+  els.photoPreview.hidden = true;
   els.phoneSaveHint.hidden = true;
   setStatus("倒计时", "waiting");
   const delaySeconds = 3;
@@ -250,12 +254,22 @@ function showCapturedPhoto(dataUrl, fileName) {
   els.download.href = dataUrl;
   els.download.download = state.lastCaptureName;
   els.photoPanel.hidden = false;
+  els.photoLoading.hidden = true;
+  els.photoPreview.hidden = false;
   els.phoneSaveHint.hidden = true;
   els.phoneSaveHint.textContent =
     "照片已发送到手机。请在手机端点击“保存或分享”，保存图片或发送到其他 App。";
   els.savePhone.textContent = "发送到手机";
   els.capture.disabled = false;
   setStatus("照片已就绪", "connected");
+}
+
+function showPhotoLoading() {
+  els.photoPanel.hidden = false;
+  els.photoLoading.hidden = false;
+  els.photoPreview.hidden = true;
+  els.phoneSaveHint.hidden = true;
+  els.savePhone.textContent = "发送到手机";
 }
 
 function confirmPhoneSaveReady() {
@@ -323,6 +337,7 @@ function runCountdown(seconds) {
     if (remaining <= 0) {
       clearInterval(state.countdownTimer);
       els.countdown.hidden = true;
+      showPhotoLoading();
       setStatus("拍照中", "waiting");
       return;
     }
