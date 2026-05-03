@@ -2,6 +2,8 @@
 
 BackMirror 是一个本地优先的 Web App，可以把手机变成私密摄像头，把电脑变成大屏实时预览器。它面向独自使用的场景，例如查看难以看见的皮肤区域、发型，或狭窄空间里的物体。
 
+线上试用地址：https://backmirror-production.up.railway.app
+
 BackMirror 只帮助你在本地拍摄图像。它不提供诊断、治疗，也不能替代专业医疗建议。
 
 ## 功能
@@ -56,20 +58,20 @@ https://192.168.1.23:7443
 
 ## 发布试用
 
-最快的公网试用方式是部署到 Render 这类支持 Node.js 和 WebSocket 的平台。生产环境下 BackMirror 会启动普通 HTTP 服务，由部署平台提供公网 HTTPS；本地运行仍然使用自签 HTTPS 证书。
+最快的公网试用方式是部署到 Railway 这类支持 Node.js 和 WebSocket 的平台。生产环境下 BackMirror 会启动普通 HTTP 服务，由部署平台提供公网 HTTPS；本地运行仍然使用自签 HTTPS 证书。
 
-### Render 部署
+### Railway 部署
 
 1. 把仓库推到 GitHub。
-2. 在 Render 创建新的 Web Service，并连接这个仓库。
-3. 如果 Render 识别到 `render.yaml`，按提示创建服务即可；否则手动填写：
+2. 在 Railway 创建新的 Project，并选择从 GitHub 仓库部署。
+3. 如果 Railway 自动识别 Node 项目，按提示创建服务即可；否则手动填写：
    - Build Command: `npm install`
    - Start Command: `npm start`
    - Environment Variable: `NODE_ENV=production`
-4. 部署完成后，打开 Render 提供的 `https://...onrender.com` 链接。
+4. 部署完成后，在 Railway 的 Networking / Public Networking 中生成公网域名。
 5. 用手机扫描电脑端页面的二维码，允许摄像头权限后开始试用。
 
-Render 免费实例可能会休眠，第一次打开会慢一些。这个部署模式适合外部试用；如果你只想在同一局域网内完全本地使用，继续按“运行”章节启动即可。
+Railway 试用实例可能有额度限制。这个部署模式适合外部试用；如果你只想在同一局域网内完全本地使用，继续按“运行”章节启动即可。
 
 ### WebRTC 网络配置
 
