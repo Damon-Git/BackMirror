@@ -360,6 +360,17 @@ h1 {
   padding-top: 12px;
 }
 
+.disclaimer a,
+.privacy-link,
+.privacy-page a {
+  color: var(--accent-strong);
+}
+
+.privacy-link {
+  font-size: 13px;
+  width: fit-content;
+}
+
 .mobile-shell {
   overflow: hidden;
   background: #050605;
@@ -510,6 +521,52 @@ h1 {
   background: rgba(110, 24, 24, 0.82);
   padding: 12px;
   line-height: 1.45;
+}
+
+.privacy-shell {
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+.privacy-page {
+  width: min(840px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 40px 0 56px;
+  display: grid;
+  gap: 22px;
+}
+
+.privacy-page header,
+.privacy-page section {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 22px;
+}
+
+.privacy-page header {
+  display: grid;
+  gap: 8px;
+}
+
+.privacy-page h1 {
+  font-size: 32px;
+}
+
+.privacy-page h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.privacy-page p,
+.privacy-page li {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.privacy-page ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
 }
 
 @media (max-width: 900px) {

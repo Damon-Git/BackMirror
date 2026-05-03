@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BackMirror 隐私说明</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="privacy-shell">
+    <main class="privacy-page">
+      <header>
+        <a href="/">BackMirror</a>
+        <h1>隐私说明</h1>
+        <p>更新日期：2026-05-03</p>
+      </header>
+
+      <section>
+        <h2>核心说明</h2>
+        <p>
+          BackMirror 用于把手机摄像头画面显示到你的电脑浏览器，并在你主动点击拍照时生成照片。我们不要求注册账号，不提供云相册，也不会把照片或视频保存到服务端。
+        </p>
+      </section>
+
+      <section>
+        <h2>我们不会做什么</h2>
+        <ul>
+          <li>不会把手机摄像头画面上传到 BackMirror 服务端保存。</li>
+          <li>不会把你拍摄的照片写入服务端磁盘。</li>
+          <li>不会要求你提供姓名、手机号、身份证号或账号密码。</li>
+          <li>不会把照片或视频用于训练模型、广告投放或画像分析。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>运行时会处理什么</h2>
+        <ul>
+          <li>页面文件：服务端会向浏览器发送 BackMirror 的网页、脚本、样式和二维码。</li>
+          <li>房间信息：服务端会临时生成一个随机房间 ID，用于让电脑端和手机端配对。</li>
+          <li>连接信令：服务端会转发 WebRTC 建连所需的 offer、answer 和 ICE candidate。</li>
+          <li>基础访问日志：部署平台可能记录 IP 地址、访问时间、URL、User-Agent、错误日志等运行信息。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>照片和视频如何传输</h2>
+        <p>
+          摄像头预览通过 WebRTC 在你的手机浏览器和电脑浏览器之间传输。拍照时，照片在手机浏览器本地生成，再通过 WebRTC DataChannel 发送到电脑浏览器。默认情况下，BackMirror 服务端只参与配对和信令转发，不接收、解析或保存媒体内容。
+        </p>
+        <p>
+          为提高连接成功率，服务端可能提供 STUN 配置。STUN 用于帮助浏览器发现网络连接路径，不用于保存照片或视频。如果以后启用 TURN，中继服务可能会转发媒体流，隐私模型会发生变化，应在启用前单独说明。
+        </p>
+      </section>
+
+      <section>
+        <h2>敏感内容提醒</h2>
+        <p>
+          后背、皮肤、身体局部、健康相关照片可能非常敏感。请只拍摄你自己有权处理的内容，不要拍摄他人、未成年人或任何未经同意的内容。请自行判断是否适合保存、分享或发送给其他应用。
+        </p>
+      </section>
+
+      <section>
+        <h2>医疗说明</h2>
+        <p>
+          BackMirror 不是医疗器械，也不提供诊断、治疗、筛查或健康评估。它只能帮助你取景和拍照。任何医疗或健康判断都应咨询有资质的专业人员。
+        </p>
+      </section>
+
+      <section>
+        <h2>数据保留</h2>
+        <ul>
+          <li>房间 ID 会在服务运行内存中短暂保留，空房间会自动清理。</li>
+          <li>照片和视频不会由 BackMirror 服务端保存。</li>
+          <li>部署平台日志的保留时间取决于平台规则。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>试用提示</h2>
+        <p>
+          社交媒体公开试用期间，请避免拍摄高度私密或你不愿承担传播风险的内容。浏览器、操作系统、下载目录、系统分享面板和你主动发送到的第三方应用，可能会在本机或第三方服务中保存副本。
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
