@@ -245,12 +245,15 @@ function handleUpgrade(req, socket) {
     ].join("\r\n")
   );
 
-  const client = { socket, roomId, role, alive: true };
+  const client = { socket, roomId, role, alive: true, frameBuffer: Buffer.alloc(0) };
   room.clients.add(client);
   broadcast(room, client, { type: "peer-joined", role });
 
   socket.on("data", (buffer) => {
-    for (const message of decodeFrames(buffer)) {
+    const decoded = decodeFrames(Buffer.concat([client.frameBuffer, buffer]));
+    client.frameBuffer = decoded.remaining;
+
+    for (const message of decoded.messages) {
       if (message === "__close__") {
         socket.end();
         return;
@@ -293,6 +296,7 @@ function decodeFrames(buffer) {
   let offset = 0;
 
   while (offset + 2 <= buffer.length) {
+    const frameStart = offset;
     const first = buffer[offset++];
     const second = buffer[offset++];
     const opcode = first & 0x0f;
@@ -300,11 +304,17 @@ function decodeFrames(buffer) {
     let length = second & 0x7f;
 
     if (length === 126) {
-      if (offset + 2 > buffer.length) break;
+      if (offset + 2 > buffer.length) {
+        offset = frameStart;
+        break;
+      }
       length = buffer.readUInt16BE(offset);
       offset += 2;
     } else if (length === 127) {
-      if (offset + 8 > buffer.length) break;
+      if (offset + 8 > buffer.length) {
+        offset = frameStart;
+        break;
+      }
       const high = buffer.readUInt32BE(offset);
       const low = buffer.readUInt32BE(offset + 4);
       length = high * 2 ** 32 + low;
@@ -313,12 +323,18 @@ function decodeFrames(buffer) {
 
     let mask;
     if (masked) {
-      if (offset + 4 > buffer.length) break;
+      if (offset + 4 > buffer.length) {
+        offset = frameStart;
+        break;
+      }
       mask = buffer.subarray(offset, offset + 4);
       offset += 4;
     }
 
-    if (offset + length > buffer.length) break;
+    if (offset + length > buffer.length) {
+      offset = frameStart;
+      break;
+    }
     const payload = Buffer.from(buffer.subarray(offset, offset + length));
     offset += length;
 
@@ -331,7 +347,7 @@ function decodeFrames(buffer) {
     else if (opcode === 0x1) messages.push(payload.toString("utf8"));
   }
 
-  return messages;
+  return { messages, remaining: buffer.subarray(offset) };
 }
 
 function encodeFrame(message, opcode = 0x1) {
